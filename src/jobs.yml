@@ -1,0 +1,10 @@
+Jobs:
+  Holzfaeller: #whatever
+    name: "Holzfäller" #displayname ingame
+    color: "GREEN" #color for formatting and so on
+    max_level: 100 #max level
+    gui: "diamond_axe"
+    description: "Der Holzfäller"
+    job_id: 1 #never same please
+    break: # material - exp - limit level
+      - "oak_log-1.0-1"

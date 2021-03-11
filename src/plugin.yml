@@ -1,0 +1,10 @@
+name: GoodJobs
+author: Ninoo
+version: 1.0
+api-version: 1.16
+main: net.fruchtlabor.fruchtcore.FruchtCore
+depend: []
+commands:
+  job:
+    description: "Jobbefehl"
+    usage: "Jobbefehl"

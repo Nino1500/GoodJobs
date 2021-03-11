@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="GoodJobs">
+    <output-path>G:/testserver/plugins</output-path>
+    <root id="archive" name="GoodJobs.jar">
+      <element id="module-output" name="GoodJobs" />
+    </root>
+  </artifact>
+</component>
