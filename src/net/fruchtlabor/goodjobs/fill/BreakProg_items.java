@@ -1,4 +1,4 @@
-package net.fruchtlabor.goodjobs;
+package net.fruchtlabor.goodjobs.fill;
 
 import org.bukkit.Material;
 import org.bukkit.configuration.Configuration;

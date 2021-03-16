@@ -1,8 +1,11 @@
-package net.fruchtlabor.goodjobs;
+package net.fruchtlabor.goodjobs.fill;
 
+import net.fruchtlabor.goodjobs.fill.BreakProg_items;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +17,10 @@ public class Job {
     private int id;
     private Material gui;
     private String description;
+    private double shear;
     private List<BreakProg_items> breaklist;
+    private List<FishProg> fishlist;
+    private List<EntityProg> entityProgList;
 
     public Job(final ConfigurationSection section){
         this.max_level = section.getInt("max_level");
@@ -23,8 +29,22 @@ public class Job {
         this.id = section.getInt("job_id");
         this.gui = Material.matchMaterial(section.getString("gui"));
         this.description = section.getString("description");
+        this.shear = section.getDouble("shear");
         this.breaklist = constBreakList(section.getStringList("break"));
+        this.entityProgList = constEntityProgs(section.getStringList("mobkill"));
+        this.fishlist = constFishList(section.getStringList("fish"));
+    }
 
+    public List<EntityProg> constEntityProgs(List<String> entites){
+        List<EntityProg> list = new ArrayList<>();
+        for (String s : entites){
+            String spl[] = s.split("-");
+            EntityType entity = EntityType.valueOf(spl[0]);
+            double exp = Double.parseDouble(spl[1]);
+            int limit = Integer.parseInt(spl[2]);
+            list.add(new EntityProg(limit, entity, exp));
+        }
+        return list;
     }
 
     public List<BreakProg_items> constBreakList(List<String> break_list){
@@ -35,6 +55,17 @@ public class Job {
             double exp = Double.parseDouble(spl[1]);
             int limit = Integer.parseInt(spl[2]);
             list.add(new BreakProg_items(limit, material, exp));
+        }
+        return list;
+    }
+    public List<FishProg> constFishList(List<String> fishl){
+        List<FishProg> list = new ArrayList<>();
+        for (String s : fishl){
+            String spl[] = s.split("-");
+            Material material = Material.matchMaterial(spl[0]);
+            double exp = Double.parseDouble(spl[1]);
+            int limit = Integer.parseInt(spl[2]);
+            list.add(new FishProg(limit, material, exp));
         }
         return list;
     }
@@ -65,5 +96,17 @@ public class Job {
 
     public List<BreakProg_items> getBreaklist() {
         return breaklist;
+    }
+
+    public List<FishProg> getFishlist() {
+        return fishlist;
+    }
+
+    public double getShear() {
+        return shear;
+    }
+
+    public List<EntityProg> getEntityProgList() {
+        return entityProgList;
     }
 }

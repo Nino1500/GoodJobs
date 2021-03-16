@@ -1,6 +1,6 @@
 Jobs:
   Holzfaeller: #whatever
-    name: "Holzfäller" #displayname ingame
+    name: "Holzfaeller" #displayname ingame
     color: "GREEN" #color for formatting and so on
     max_level: 100 #max level
     gui: "diamond_axe"
@@ -8,3 +8,50 @@ Jobs:
     job_id: 1 #never same please
     break: # material - exp - limit level
       - "oak_log-1.0-1"
+    place: #no
+      - ""
+    shear: 1.0 #because we only shear the fcking sheep ffs
+    mobkill:
+      - "zombie-1.0-1"
+      - "skeleton-2.0-1"
+    playerkill: 1.0 #no
+    fish: #stone here is for ALL other items except the above
+      - "cod-1.0-1"
+      - "salmon-1.5-1"
+      - "pufferfish-3.0-2"
+      - "tropical_fish-5.0-3"
+      - "stick-0.1-1"
+      - "stone-0.2-1"
+    craft: #no
+      - ""
+    breed: #no
+      - ""
+    enchant: #no
+      - ""
+    disenchant: #no
+      - ""
+  Minenarbeiter: #whatever
+    name: "Minenarbeiter" #displayname ingame
+    color: "GRAY" #color for formatting and so on
+    max_level: 100 #max level
+    gui: "diamond_pickaxe"
+    description: "Der Minenarbeiter"
+    job_id: 1 #never same please
+    break: # material - exp - limit level
+      - "stone-1.0-1"
+    place:
+      - ""
+    shear: 1.0 #because we only shear all the fcking sheep ffs
+    mobkill:
+      - "zombie-1.0-1"
+    playerkill: 1.0
+    fish:
+      - ""
+    craft:
+      - ""
+    breed:
+      - ""
+    enchant:
+      - ""
+    disenchant:
+      - ""
