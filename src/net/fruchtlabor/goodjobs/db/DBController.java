@@ -1,54 +1,28 @@
 package net.fruchtlabor.goodjobs.db;
 
-import net.fruchtlabor.goodjobs.listeners.Notify;
-import org.bukkit.Bukkit;
+import net.fruchtlabor.goodjobs.fill.BreakLogContainer;
+import org.bukkit.craftbukkit.libs.it.unimi.dsi.fastutil.Hash;
 import org.bukkit.plugin.Plugin;
 
-import java.io.File;
-import java.io.IOException;
 import java.sql.*;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Level;
-import java.util.stream.Collectors;
+import java.util.*;
 
 public class DBController {
     Plugin plugin;
-    String dbName;
-    String url;
-    Connection connection;
 
-    public DBController(Plugin plugin, String dbName) {
+    public DBController(Plugin plugin) {
         this.plugin = plugin;
-        this.dbName = dbName;
-        connection = connect();
     }
 
     public Connection connect() {
         Connection connection = null;
-        File dataFolder = new File(plugin.getDataFolder(), dbName+".db");
-        if (!dataFolder.exists()){
-            try {
-                dataFolder.createNewFile();
-            } catch (IOException e) {
-                plugin.getLogger().log(Level.SEVERE, "File write error: "+dbName+".db");
-            }
-        }
         try {
-            if(connection!=null && !connection.isClosed()){
-                return connection;
-            }
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:" + dataFolder);
-            return connection;
-        } catch (SQLException ex) {
-            plugin.getLogger().log(Level.SEVERE,"SQLite exception on initialize", ex);
-        } catch (ClassNotFoundException ex) {
-            plugin.getLogger().log(Level.SEVERE, "You need the SQLite JBDC library. Google it. Put it in /lib folder.");
+            Class.forName("com.mysql.jdbc.Driver");
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/test","test", "test");
+        } catch (ClassNotFoundException | SQLException e) {
+            e.printStackTrace();
         }
-        return null;
+        return connection;
     }
 
     public void createTable(String jobname){
@@ -56,163 +30,243 @@ public class DBController {
                 "(uuid VARCHAR(255) not NULL," +
                 "lvl int," +
                 "exp double," +
+                "plvl int," +
                 "PRIMARY KEY (uuid))";
 
-        try (Connection conn = connect();
-             Statement stmt = conn.createStatement()) {
+        try {
+            Connection conn = connect();
+            Statement stmt = conn.createStatement();
             // create a new table
             stmt.execute(sql);
+            conn.close();
+            stmt.close();
         } catch (SQLException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    //Player gets the Perm Job.jobname, on the command it inserts the player to the table (if he doesnt exist already)
-    public boolean insertPlayer(UUID uuid, String jobname){
-        String sql = "INSERT INTO "+jobname+" (uuid, lvl, exp) VALUES (?,?,?)";
-        if(!checkIfExists(uuid, jobname)){
-            try {
-                PreparedStatement stmt = connection.prepareStatement(sql);
-                stmt.setString(1, uuid.toString());
-                stmt.setInt(2, 1);
-                stmt.setDouble(3, 0.0);
-                stmt.executeUpdate();
-                return true;
-            }catch (SQLException e){
-                e.printStackTrace();
-                Bukkit.getConsoleSender().sendMessage("Error at insertPlayer DBCONTROLLER!!");
-                return false;
-            }
-        }
-        return false;
-    }
-    public boolean checkIfExists(UUID uuid, String jobname){
-        String sql = "SELECT * FROM " + jobname;
+    public void logBreakTable(){
+        String sql = "CREATE TABLE IF NOT EXISTS breaklog " +
+                "(uuid VARCHAR(255) not NULL," +
+                "diamond INTEGER, " +
+                "emerald INTEGER, " +
+                "ancient INTEGER, " +
+                "gold INTEGER, " +
+                "stone INTEGER, " +
+                "PRIMARY KEY (uuid))";
         try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            if(rs == null){
-                return false;
+            Connection conn = connect();
+            Statement stmt = conn.createStatement();
+            // create a new table
+            stmt.execute(sql);
+            conn.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void logPlaceTable(){
+        String sql = "CREATE TABLE IF NOT EXISTS placelog " +
+                "(location VARCHAR(512) not NULL," +
+                "world VARCHAR(32)," +
+                "PRIMARY KEY (location))";
+        try {
+            Connection conn = connect();
+            Statement stmt = conn.createStatement();
+            // create a new table
+            stmt.execute(sql);
+            conn.close();
+            stmt.close();
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void insertBreakLog(HashMap<String, BreakLogContainer> map){
+
+        String sql = "INSERT INTO breaklog VALUES (?,?,?,?,?,?) ON DUPLICATE KEY UPDATE " +
+                "diamond= ?, emerald= ?, ancient= ?, gold= ?, stone= ?";
+
+        try {
+            Connection connection = connect();
+            PreparedStatement statement = connection.prepareStatement(sql);
+
+            for (Map.Entry<String, BreakLogContainer> entry : map.entrySet()){
+                statement.setString(1, entry.getKey());
+                statement.setInt(2, entry.getValue().getDiamond());
+                statement.setInt(3, entry.getValue().getEmerald());
+                statement.setInt(4, entry.getValue().getAncient());
+                statement.setInt(5, entry.getValue().getGold());
+                statement.setInt(6, entry.getValue().getStone());
+                statement.setInt(7, entry.getValue().getDiamond());
+                statement.setInt(8, entry.getValue().getEmerald());
+                statement.setInt(9, entry.getValue().getAncient());
+                statement.setInt(10, entry.getValue().getGold());
+                statement.setInt(11, entry.getValue().getStone());
+                statement.addBatch();
             }
+
+            statement.executeBatch();
+            connection.close();
+            statement.close();
+
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void insertPlaceLog(HashMap<String, String> map){
+        String sql = "INSERT INTO placelog VALUES (?,?) ON DUPLICATE KEY UPDATE " +
+                "world= ?";
+
+        try {
+            Connection connection = connect();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            for (Map.Entry<String,String> entry : map.entrySet()){
+                statement.setString(1, entry.getKey());
+                statement.setString(2, entry.getValue());
+                statement.setString(3, entry.getValue());
+                statement.addBatch();
+            }
+            statement.executeBatch();
+            connection.close();
+            statement.close();
+        }catch (SQLException e){
+            e.printStackTrace();
+        }
+    }
+
+    public HashMap<String, BreakLogContainer> getBreakLog(){
+        HashMap<String, BreakLogContainer> map = new HashMap<>();
+        String sql = "SELECT * FROM breaklog";
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        try {
+            connection = connect();
+            statement = connection.createStatement();
+            rs = statement.executeQuery(sql);
             while (rs.next()){
-                if(rs.getString("uuid").equalsIgnoreCase(uuid.toString())){
-                    return true;
+                map.put(rs.getString(1), new BreakLogContainer(rs.getInt(1),
+                        rs.getInt(2), rs.getInt(3), rs.getInt(4),
+                        rs.getInt(5)));
+            }
+            return map;
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            try {
+                if (rs != null) {
+                    rs.close();
                 }
-            }
-            return false;
-        }catch (SQLException e){
-            e.printStackTrace();
-            Bukkit.getConsoleSender().sendMessage("Error at checkIfExists DBCONTROLLER!!");
-            return false;
-        }
-    }
-    public void addLvl(UUID uuid, String jobname, int lvl){
-        lvl = lvl + getLvl(uuid, jobname);
-        String sql = "UPDATE " + jobname + "SET lvl = ? WHERE uuid = ?";
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setInt(1, lvl);
-            stmt.setString(2, uuid.toString());
-            stmt.executeUpdate();
-            Notify notify = new Notify(plugin);
-            notify.notifyLevelUp(lvl, uuid, jobname);
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public void addExp(UUID uuid, String jobname, double exp){
-        exp = exp + getExp(uuid, jobname);
-        String sql = "UPDATE " + jobname + " SET exp = ? WHERE uuid = ?";
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setDouble(1, exp);
-            stmt.setString(2, uuid.toString());
-            stmt.executeUpdate();
-            Notify notify = new Notify(plugin);
-            notify.notifyExpGain(exp, uuid, jobname);
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public void removeLvl(UUID uuid, String jobname, int lvl){
-        lvl = getLvl(uuid, jobname) - lvl;
-        if(getLvl(uuid, jobname) > 1 && lvl >= 1){
-            String sql = "UPDATE " + jobname + " SET lvl = ? WHERE uuid = ?";
-            try {
-                PreparedStatement stmt = connection.prepareStatement(sql);
-                stmt.setInt(1, lvl);
-                stmt.setString(2, uuid.toString());
-                stmt.executeUpdate();
-            }catch (SQLException e){
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
                 e.printStackTrace();
             }
-        }
-    }
-    public void removeExp(UUID uuid, String jobname, double exp){
-        exp = getExp(uuid, jobname) - exp;
-        if(exp > 0.0){
-            String sql = "UPDATE " + jobname + " SET exp = ? WHERE uuid = ?";
-            try {
-                PreparedStatement stmt = connection.prepareStatement(sql);
-                stmt.setDouble(1, exp);
-                stmt.setString(2, uuid.toString());
-                stmt.executeUpdate();
-            }catch (SQLException e){
-                e.printStackTrace();
-            }
-        }
-    }
-    public void deletePlayer(UUID uuid, String jobname){
-        String sql = "DELETE FROM " + jobname + " WHERE uuid = ?";
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, uuid.toString());
-            stmt.executeUpdate();
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-    }
-    public List<Map.Entry<UUID, Integer>> getTop(String jobname){
-        HashMap<UUID, Integer> playermap = new HashMap<>();
-        String sql = "SELECT * FROM " + jobname;
-        try {
-            Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(sql);
-            while (rs.next()){
-                playermap.put(UUID.fromString(rs.getString("uuid")), rs.getInt("lvl"));
-            }
-            return playermap.entrySet().stream()
-                    .sorted(Map.Entry.comparingByValue())
-                    .collect(Collectors.toList());
-        }catch (SQLException e){
-            e.printStackTrace();
         }
         return null;
     }
-    public int getLvl(UUID uuid, String jobname){
-        String sql = "SELECT lvl FROM "+jobname+" WHERE uuid = ?";
+
+    public HashMap<String, String> getPlaceLog(){
+        String sql = "SELECT * FROM placelog";
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        HashMap<String, String> map = new HashMap<>();
         try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, uuid.toString());
-            ResultSet rs = stmt.executeQuery();
-            return rs.getInt("lvl");
+            connection = connect();
+            statement = connection.createStatement();
+            rs = statement.executeQuery(sql);
+            while (rs.next()){
+                map.put(rs.getString(1), rs.getString(2));
+            }
+            return map;
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            try {
+                if (rs != null) {
+                    rs.close();
+                }
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    public ArrayList<JobPlayer> getPlayersByJob(String jobname){
+        String sql = "SELECT * FROM "+jobname;
+        Connection connection = null;
+        Statement statement = null;
+        ResultSet rs = null;
+        ArrayList<JobPlayer> list = new ArrayList<>();
+        try {
+            connection = connect();
+            statement = connection.createStatement();
+            rs = statement.executeQuery(sql);
+            while (rs.next()){
+                list.add(new JobPlayer(jobname, rs.getInt("lvl"), rs.getDouble("exp"), UUID.fromString(rs.getString("uuid")), rs.getInt("plvl")));
+            }
+            return list;
+        }catch (SQLException e){
+            e.printStackTrace();
+        }finally {
+            try {
+                if(rs != null){
+                    rs.close();
+                }
+                if(statement != null){
+                    statement.close();
+                }
+                if(connection != null){
+                    connection.close();
+                }
+            }catch (SQLException e){
+                e.printStackTrace();
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Method inserts all players of each job into the db
+     * @param list list of each job with its players
+     * @param jobname jobname for the right table
+     */
+    public void insertAllPlayers(ArrayList<JobPlayer> list, String jobname){
+        try {
+            String sql = "INSERT INTO "+jobname+" VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE lvl= ?, exp= ?, plvl= ?";
+            Connection connection = connect();
+            PreparedStatement statement = connection.prepareStatement(sql);
+            for (JobPlayer jobPlayer : list) {
+                statement.setString(1, jobPlayer.getUuid().toString());
+                statement.setInt(2, jobPlayer.getLvl());
+                statement.setDouble(3, jobPlayer.getExp());
+                statement.setInt(4, jobPlayer.getPlvl());
+                statement.setInt(5, jobPlayer.getLvl());
+                statement.setDouble(6, jobPlayer.getExp());
+                statement.setInt(7, jobPlayer.getPlvl());
+                statement.addBatch();
+            }
+            int[] numUpdates = statement.executeBatch();
+            System.out.println("Saved: "+numUpdates.length+" Players! Job: "+jobname);
+            connection.close();
+            statement.close();
         }catch (SQLException e){
             e.printStackTrace();
         }
-        return 0;
     }
-    public double getExp(UUID uuid, String jobname){
-        String sql = "SELECT exp FROM "+jobname+" WHERE uuid = ?";
-        try {
-            PreparedStatement stmt = connection.prepareStatement(sql);
-            stmt.setString(1, uuid.toString());
-            ResultSet rs = stmt.executeQuery();
-            return rs.getDouble("exp");
-        }catch (SQLException e){
-            e.printStackTrace();
-        }
-        return 0.0;
-    }
-
-
 }

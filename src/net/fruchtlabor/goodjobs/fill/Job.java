@@ -8,7 +8,9 @@ import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 
 public class Job {
     private int max_level;
@@ -22,7 +24,7 @@ public class Job {
     private List<FishProg> fishlist;
     private List<EntityProg> entityProgList;
 
-    public Job(final ConfigurationSection section){
+    public Job(final ConfigurationSection section) {
         this.max_level = section.getInt("max_level");
         this.name = section.getString("name");
         this.color = ChatColor.valueOf(section.getString("color"));
@@ -35,11 +37,11 @@ public class Job {
         this.fishlist = constFishList(section.getStringList("fish"));
     }
 
-    public List<EntityProg> constEntityProgs(List<String> entites){
+    public List<EntityProg> constEntityProgs(List<String> entites) {
         List<EntityProg> list = new ArrayList<>();
-        for (String s : entites){
-            String spl[] = s.split("-");
-            EntityType entity = EntityType.valueOf(spl[0]);
+        for (String s : entites) {
+            String[] spl = s.split("-");
+            EntityType entity = EntityType.valueOf(spl[0].toUpperCase());
             double exp = Double.parseDouble(spl[1]);
             int limit = Integer.parseInt(spl[2]);
             list.add(new EntityProg(limit, entity, exp));
@@ -47,10 +49,10 @@ public class Job {
         return list;
     }
 
-    public List<BreakProg_items> constBreakList(List<String> break_list){
+    public List<BreakProg_items> constBreakList(List<String> break_list) {
         List<BreakProg_items> list = new ArrayList<>();
-        for (String s : break_list){
-            String spl[] = s.split("-");
+        for (String s : break_list) {
+            String[] spl = s.split("-");
             Material material = Material.matchMaterial(spl[0]);
             double exp = Double.parseDouble(spl[1]);
             int limit = Integer.parseInt(spl[2]);
@@ -58,10 +60,11 @@ public class Job {
         }
         return list;
     }
-    public List<FishProg> constFishList(List<String> fishl){
+
+    public List<FishProg> constFishList(List<String> fishl) {
         List<FishProg> list = new ArrayList<>();
-        for (String s : fishl){
-            String spl[] = s.split("-");
+        for (String s : fishl) {
+            String[] spl = s.split("-");
             Material material = Material.matchMaterial(spl[0]);
             double exp = Double.parseDouble(spl[1]);
             int limit = Integer.parseInt(spl[2]);
